@@ -1,12 +1,14 @@
 import requests
 import os
 import json
+import re
 
 # Set Envionmental Variables
-auth_token = os.environ['auth_token']
 region = os.environ['region']
 network = os.environ['network']
 discord_url = os.environ['discord_url']
+user = os.environ['user']
+passw = os.environ['passw']
 
 
 def send_message_discord(url, message):
@@ -23,9 +25,27 @@ def send_message_discord(url, message):
     return r
 
 
+def get_token():
+
+    url = 'https://rest.prod.immedia-semi.com/login'
+    headers = {'Host': "prod.immedia-semi.com",
+               'Content-Type': 'application/json'}
+
+    data = json.dumps({"email": user,
+                       "password": passw,
+                       "client_specifier": "iPhone 9.2 | 2.2 | 222"
+                       })
+
+    r = requests.post(url, headers=headers, data=data)
+
+    auth_token = re.search(r'{\"authtoken\":\"(.*?)\"', r.text).group(1)
+
+    return auth_token
+
+
 class Blink(object):
     def __init__(self):
-        self.auth_token = auth_token
+        self.auth_token = get_token()
         self.region = region
         self.network = network
 
@@ -53,6 +73,8 @@ class Blink(object):
 
             return r.text
 
+
+# Main
 
 Blink = Blink()
 

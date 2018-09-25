@@ -21,3 +21,16 @@ curl -H "Host: prod.immedia-semi.com" -H "TOKEN_AUTH: authtoken from login" --da
 
 
 
+##Deploying
+
+Make bucket
+aws s3 mb s3://blink-app-111  --region us-east-1
+
+
+sam package \
+   --template-file template.yaml \
+   --output-template-file serverless-output.yaml \
+   --s3-bucket blink-app-111
+   
+   
+aws cloudformation deploy --template-file /Users/michael/PycharmProjects/lambda-blink/serverless-output.yaml --stack-name blink-app --region us-east-1 --capabilities CAPABILITY_IAM
