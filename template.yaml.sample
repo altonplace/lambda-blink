@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  BlinkTogglingLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: main.lambda_handler
+      Runtime: python3.6
+      Timeout: 60
+      Policies: AWSLambdaExecute
+      Environment:
+        Variables:
+          SlackUrl: 'WebhookURL'
+          BlinkUser: 'BlinkUsername'
+          BlinkPass: 'BlinkPass'
+          BlinkNetwork: 'Blink Network - get from curl command'
+          BlinkRegion: 'Blink Region - get from curl command'
+  SrcBucket:
+    Type: AWS::S3::Bucket
