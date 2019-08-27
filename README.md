@@ -73,6 +73,7 @@ Next, the following command will create a Cloudformation Stack and deploy the SA
 sam deploy \
     --template-file packaged.yaml \
     --stack-name lambda-blink-cf \
+    --parameter-overrides ButtonDNS=REPLACE_WITH_YOUR_BUTTON_DSN
     --capabilities CAPABILITY_IAM
 ```
 
@@ -180,6 +181,7 @@ sam package \
 sam deploy \
     --template-file packaged.yaml \
     --stack-name lambda-blink-cf \
+    --parameter-overrides ButtonDNS=REPLACE_WITH_YOUR_BUTTON_DSN
     --capabilities CAPABILITY_IAM
 
 # Describe Output section of CloudFormation stack previously created
