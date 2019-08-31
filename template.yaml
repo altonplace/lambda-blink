@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  lambda-blink
+
+  SAM Template for lambda-blink
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Parameters:
+  ButtonDSN:
+    Description: IoT Button DSN, this will be used to create the topic to subscribe to 'iotbutton/XXXXXXXXXXXXXXXX'
+    Type: String
+    MinLength: 16
+    MaxLength: 16
+
+
+Resources:
+  BlinkFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: blink/
+      Handler: main.lambda_handler
+      Runtime: python3.7
+      Description: Lambda function to arm/disarm Blink system via IoT button
+      Timeout: 30
+      Policies:
+        #- AWSLambdaExecute
+        - Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Action: secretsmanager:GetSecretValue
+            Resource: !ImportValue BlinkSecretARN
+      Environment:
+        Variables:
+          SSMSecretName: prod/blink/login
+          SSMRegion: eu-west-1
+      Events:
+        IoTButton:
+          Type: IoTRule # More info about Event Sources: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md
+          Properties:
+            Sql: !Sub "SELECT * FROM 'iotbutton/${ButtonDSN}'"
+
+Outputs:
+  BlinkFunction:
+    Description: Blink Lambda Function ARN
+    Value: !GetAtt BlinkFunction.Arn
+  BlinkFunctionIamRole:
+    Description: Implicit IAM Role created for Blink function
+    Value: !GetAtt BlinkFunctionRole.Arn
