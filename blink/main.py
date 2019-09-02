@@ -7,7 +7,6 @@ from botocore.exceptions import ClientError
 # Get/Set Environmental Variables
 ssm_secret_name = os.environ['SSMSecretName'] if 'SSMSecretName' in os.environ else 'prod/blink/login'
 ssm_region = os.environ['SSMRegion'] if 'SSMRegion' in os.environ else 'us-east-1'
-slack_url = os.environ['SlackUrl'] if 'SlackUrl' in os.environ else None
 
 
 def send_message_slack(url, message):
@@ -30,6 +29,7 @@ class Blink(object):
         self.session = boto3.session.Session()
         self.ssm_secret_name = ssm_secret_name
         self.ssm_region = ssm_region
+        self.slack_url = None
         self.ssm = self.session.client(service_name='secretsmanager', region_name=self.ssm_region)
         self.email = None
         self.password = None
@@ -39,13 +39,16 @@ class Blink(object):
         self.get_secrets()
         self.get_token()
 
-
     def get_secrets(self):
         try:
             ssm_secret = self.ssm.get_secret_value(SecretId=self.ssm_secret_name)
             if 'SecretString' in ssm_secret:
                 self.email = json.loads(ssm_secret['SecretString'])['blinkUser']
                 self.password = json.loads(ssm_secret['SecretString'])['blinkPassword']
+                try:  # get slack url if using
+                    self.slack_url = json.loads(ssm_secret['SecretString'])['slackUrl']
+                except KeyError:
+                    pass
         except ClientError as e:
             if e.response['Error']['Code'] == 'DecryptionFailureException':
                 raise e
@@ -60,7 +63,6 @@ class Blink(object):
             else:
                 raise e
 
-
     def update_secrets(self, email, password):
         secret = {
             'blinkUser' : email,
@@ -73,7 +75,6 @@ class Blink(object):
         self.email = email
         self.password = password
         return ssm_update_secret
-
 
     def get_token(self):
         
@@ -95,12 +96,10 @@ class Blink(object):
         else:
             return r.text
 
-
     def get_status(self):
-        url = 'https://rest.{}.immedia-semi.com/network/{}/syncmodules'.format(self.region[0], self.network[0])
+        url = 'https://rest-{}.immedia-semi.com/network/{}/syncmodules'.format(self.region[0], self.network[0])
         r = requests.get(url, headers={'TOKEN_AUTH': self.auth_token})
         return r.text
-
 
     def alarm_set(self, state='arm'):
         if state.upper() not in ('ARM', 'DISARM'):
@@ -112,11 +111,11 @@ class Blink(object):
             if state.upper() == 'DISARM':
                 message = 'House is unarmed'
 
-            url = 'https://rest.{}.immedia-semi.com/network/{}/{}'.format(self.region[0], self.network[0], state.lower())
+            url = 'https://rest-{}.immedia-semi.com/network/{}/{}'.format(self.region[0], self.network[0], state.lower())
             r = requests.post(url, headers={'TOKEN_AUTH': self.auth_token})
 
-            if slack_url:
-                send_message_slack(slack_url, message)
+            if self.slack_url:
+                send_message_slack(self.slack_url, message)
 
             return r.text
 

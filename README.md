@@ -1,5 +1,15 @@
 # lambda-blink
 
+## What is this
+This script will leverage AWS lambda to arm and disarm your Blink Camera system with an AWS IoT Button.  
+All secrets are stored in AWS secrets manager (thanks @eXodus1440])
+- One Press - Arm
+- Two Presses - Disarm
+
+Optionally, the lambda function will send a notification to a Slack Webhook url of your choice.
+
+
+## Project Structure
 This is a SAM template for the lambda-blink function - Below is a brief explanation of what each item is:
 
 ```bash
@@ -21,13 +31,17 @@ This is a SAM template for the lambda-blink function - Below is a brief explanat
 
 ## Deploy Blink SSM Secrets template as a prerequisite
 
+> **NOTE**: If using slack to send an update follow the instructions [here](https://api.slack.com/incoming-webhooks) to create a url and pass the webhook url in the command below.  
+> Otherwise, delete the last line.
+
 ```bash
 aws cloudformation deploy \
     --template-file secret-manager.yaml \
     --stack-name blink-secret-cf \
     --parameter-overrides \
     BlinkUser=REPLACE_WITH_YOUR_BLINK_USERNAME \
-    BlinkPassword=REPLACE_WITH_YOUR_BLINK_PASSWORD
+    BlinkPassword=REPLACE_WITH_YOUR_BLINK_PASSWORD \
+    SlackUrl=REPLACE WITH YOUR SLACK WEBHOOK URL OR DELETE LINE IF NOT USING SLACK
 ```
 
 After deployment is complete you can run the following command to retrieve the Secret ARN, this will be referenced by the SAM template:
@@ -73,7 +87,7 @@ Next, the following command will create a Cloudformation Stack and deploy the SA
 sam deploy \
     --template-file packaged.yaml \
     --stack-name lambda-blink-cf \
-    --parameter-overrides ButtonDNS=REPLACE_WITH_YOUR_BUTTON_DSN
+    --parameter-overrides ButtonDSN='REPLACE_WITH_YOUR_BUTTON_DSN' \
     --capabilities CAPABILITY_IAM
 ```
 
@@ -158,7 +172,8 @@ aws cloudformation deploy \
     --stack-name blink-secret-cf \
     --parameter-overrides \
     BlinkUser=REPLACE_WITH_YOUR_BLINK_USERNAME \
-    BlinkPassword=REPLACE_WITH_YOUR_BLINK_PASSWORD
+    BlinkPassword=REPLACE_WITH_YOUR_BLINK_PASSWORD \
+    SlackUrl=REPLACE WITH YOUR SLACK WEBHOOK URL OR DELETE LINE IF NOT USING SLACK
 
 # Describe Output section of CloudFormation stack previously created
 aws cloudformation describe-stacks \
@@ -181,7 +196,7 @@ sam package \
 sam deploy \
     --template-file packaged.yaml \
     --stack-name lambda-blink-cf \
-    --parameter-overrides ButtonDNS=REPLACE_WITH_YOUR_BUTTON_DSN
+    --parameter-overrides ButtonDSN=REPLACE_WITH_YOUR_BUTTON_DSN \
     --capabilities CAPABILITY_IAM
 
 # Describe Output section of CloudFormation stack previously created
